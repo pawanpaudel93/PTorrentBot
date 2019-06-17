@@ -4,6 +4,8 @@ const fs = require('fs');
 var WebTorrent = require('webtorrent-hybrid');
 var mime = require('mime-types');
 require('dotenv').config()
+const torrentStream = require('torrent-stream');
+const request = require('request');
 
 var app = express();
 
@@ -58,7 +60,7 @@ bot.onText((/\/start$/), (msg)=>{
   )
 });
 
-bot.onText((/\/magnet$/), (msg)=>{
+bot.onText((/\/magnetv1/), (msg)=>{
   const chatId =  msg.chat.id;
   bot.sendMessage(chatId, `${msg.chat.first_name} Enter magnet link here.`,
   {
@@ -83,12 +85,6 @@ bot.onText((/\/magnet$/), (msg)=>{
             clearInterval(interval);
             console.log('torrent download finished');
             torrent.files.forEach(function (file) {
-              // var fileMetadata = {
-              //   filename: file.name,
-              //   contentType: mime.lookup(file.name)
-              // }
-              // const stream = fs.createReadStream(__dirname + '/downloads/' + file.path);
-              // bot.sendVideo(msg.chat.id, stream, {}, fileMetadata);
               var fileLink = (file.path).split(' ').join('%20');
               bot.sendMessage(msg.chat.id, 'https://ptorrentbot.herokuapp.com/'+fileLink);
             })
@@ -98,6 +94,54 @@ bot.onText((/\/magnet$/), (msg)=>{
     })
   })
 });
+
+bot.onText((/\/magnetv2/), (msg)=>{
+  const chatId =  msg.chat.id;
+  bot.sendMessage(chatId, `${msg.chat.first_name} Enter magnet link here.`,
+  {
+    reply_markup: {
+        force_reply: true
+    }
+})
+  .then(ApiId =>{
+    bot.onReplyToMessage(ApiId.chat.id, ApiId.message_id, msg=>{
+      var mag // if (magnetURI.includes('http')){
+      //   request(url, function(err, resp, body){
+      //     $ = cheerio.load(body);
+      //     links = $('a');
+      //     $(links).each(function(i, link){
+      //       var turl = $(link).attr('href');
+      //       if ((String(turl)).includes('magnet'))
+      //         magnetURI = turl;	
+      //     })
+      //   });
+      // }netURI = msg.text;
+     
+      var engine = torrentStream(magnetURI, opts);
+
+      engine.on('ready', function() {
+        engine.files.forEach(function(file) {
+          
+          console.log(file.name);
+          var stream = file.createReadStream();
+          // stream is readable stream to containing the file content
+        });
+      });
+      engine.on('download', function(){
+        console.log('Downloaded: '+ (engine.swarm.downloaded)/(1024*1024) + 'MB');
+      })
+      engine.on('idle', function(){
+        console.log('Downloaded sucessfully.... YAhooooo');
+        engine.files.forEach(function (file) {
+          var fileLink = (file.path).split(' ').join('%20');
+          bot.sendMessage(msg.chat.id, 'https://ptorrentbot.herokuapp.com/'+fileLink);
+        })
+      })
+      bot.sendMessage(msg.chat.id, 'Torrent is being Downloaded and will be sent to you shortly...');
+    })
+  })
+});
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, (req, res)=>{
