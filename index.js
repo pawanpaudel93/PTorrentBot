@@ -35,6 +35,10 @@ const opts = {
 }
 var client = new WebTorrent(opts);
 
+app.get('/', (req, res)=>{
+  res.send('<html><body>PTorrentBot</body></html>');
+});
+
 bot.on('message', (msg) => {
 
   var hi = "hi";
@@ -79,13 +83,14 @@ bot.onText((/\/magnet$/), (msg)=>{
             clearInterval(interval);
             console.log('torrent download finished');
             torrent.files.forEach(function (file) {
-              var fileMetadata = {
-                filename: file.name,
-                contentType: mime.lookup(file.name)
-              }
+              // var fileMetadata = {
+              //   filename: file.name,
+              //   contentType: mime.lookup(file.name)
+              // }
               // const stream = fs.createReadStream(__dirname + '/downloads/' + file.path);
               // bot.sendVideo(msg.chat.id, stream, {}, fileMetadata);
-              bot.sendMessage(msg.chat.id, 'https://ptorrentbot.herokuapp.com/'+file.path);
+              var fileLink = (file.path).split(' ').join('%20');
+              bot.sendMessage(msg.chat.id, 'https://ptorrentbot.herokuapp.com/'+fileLink);
             })
         });
         })
@@ -93,6 +98,7 @@ bot.onText((/\/magnet$/), (msg)=>{
     })
   })
 });
+
 const port = process.env.PORT || 3000;
 app.listen(port, (req, res)=>{
   console.log(`PTorrentBot is running on port ${port}`)
